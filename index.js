@@ -2,11 +2,33 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 require("dotenv").config();
+const { MongoClient, ServerApiVersion } = require("mongodb");
 const port = process.env.PORT || 5015;
 
 // middleware
 app.use(express.json());
 app.use(cors());
+
+// mongoDB Connection
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@crud-operation.iftbw43.mongodb.net/?appName=CRUD-operation`;
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
+
+const run = async () => {
+  try {
+    await client.connect();
+    await client.db("admin").command({ ping: 1 });
+    console.log("MongoDB is Connected Successfully!");
+  } catch (error) {
+    console.log(error);
+  }
+};
+run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("Zap is Shifting shifting!");
