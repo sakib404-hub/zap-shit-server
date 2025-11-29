@@ -34,6 +34,18 @@ const run = async () => {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    app.get("/myPercels", async (req, res) => {
+      const query = {};
+      //   const email = req.query.email;
+      const { email } = req.query;
+      if (email) {
+        query.senderEmail = email;
+      }
+      const cursor = percelsCollection.findOne(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
     //posting the informations
     app.post("/percels", async (req, res) => {
       const newPercel = req.body;
