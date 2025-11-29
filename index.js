@@ -22,6 +22,25 @@ const client = new MongoClient(uri, {
 const run = async () => {
   try {
     await client.connect();
+    //here i will generate the apis
+    const db = client.db("zap-shift-db");
+    const percelsCollection = db.collection("percels");
+
+    //percel apis
+    app.get("/percels", async (req, res) => {
+      // here i will do something
+      const query = {};
+      const cursor = percelsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    //posting the informations
+    app.post("/percels", async (req, res) => {
+      const newPercel = req.body;
+      const result = await percelsCollection.insertOne(newPercel);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log("MongoDB is Connected Successfully!");
   } catch (error) {
