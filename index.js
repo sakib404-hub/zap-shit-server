@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5015;
 
 // middleware
@@ -34,7 +34,7 @@ const run = async () => {
       const result = await cursor.toArray();
       res.send(result);
     });
-
+    //getting mypercels only
     app.get("/myPercels", async (req, res) => {
       const query = {};
       //   const email = req.query.email;
@@ -42,14 +42,24 @@ const run = async () => {
       if (email) {
         query.senderEmail = email;
       }
-      const cursor = percelsCollection.findOne(query);
+      const cursor = percelsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
     //posting the informations
     app.post("/percels", async (req, res) => {
       const newPercel = req.body;
+      newPercel.createdAt = new Date();
       const result = await percelsCollection.insertOne(newPercel);
+      res.send(result);
+    });
+    // deletion of a percel
+    app.delete("/percels/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await percelsCollection.deleteOne(query);
       res.send(result);
     });
 
