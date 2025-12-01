@@ -3,6 +3,7 @@ const cors = require("cors");
 const app = express();
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = require("stripe")(`${process.env.STRIPE_SECRET}`);
 const port = process.env.PORT || 5015;
 
 // middleware
@@ -71,6 +72,8 @@ const run = async () => {
       const result = await percelsCollection.deleteOne(query);
       res.send(result);
     });
+
+    //apis for the payment
 
     await client.db("admin").command({ ping: 1 });
     console.log("MongoDB is Connected Successfully!");
