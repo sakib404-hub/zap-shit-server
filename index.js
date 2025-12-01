@@ -129,9 +129,24 @@ const run = async () => {
       res.send({ url: session.url });
     });
 
-    app.patch("/payment-success", (req, res) => {
+    app.patch("/payment-success", async (req, res) => {
       const sessionId = req.query.session_id;
-      console.log(sessionId);
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      // console.log("session retrive, ", session);
+      if (session.payment_status === "paid") {
+        const id = session.metadata.percelId;
+        const query = {
+          _id: new ObjectId(id),
+        };
+        const update = {
+          $set: {
+            paymentStatus: "paid",
+          },
+        };
+        const result = await percelsCollection.updateOne(query, update);
+        res.send(result);
+      }
+      res.send({ success: false });
     });
 
     await client.db("admin").command({ ping: 1 });
