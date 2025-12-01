@@ -53,6 +53,15 @@ const run = async () => {
       const result = await percelsCollection.insertOne(newPercel);
       res.send(result);
     });
+    // getting particular information
+    app.get("/percels/:parcelId", async (req, res) => {
+      const id = req.params.parcelId;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await percelsCollection.findOne(query);
+      res.send(result);
+    });
     // deletion of a percel
     app.delete("/percels/:id", async (req, res) => {
       const id = req.params.id;
