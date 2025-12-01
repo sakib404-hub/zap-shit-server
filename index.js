@@ -101,6 +101,34 @@ const run = async () => {
       res.send({ url: session.url });
     });
 
+    // another way of doing it
+    app.post("/payment-checkout-sesssion", async (req, res) => {
+      const paymentInfo = req.body;
+      const amount = parseInt(paymentInfo.cost) * 100;
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price_data: {
+              unit_amount: amount,
+              currency: "USD",
+              product_data: {
+                name: `Please Pay for ${paymentInfo.percelName}`,
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        metadata: {
+          percelId: paymentInfo.percelId,
+        },
+        customer_email: paymentInfo.senderEmail,
+        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+      });
+      res.send({ url: session.url });
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log("MongoDB is Connected Successfully!");
   } catch (error) {
