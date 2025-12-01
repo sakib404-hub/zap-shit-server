@@ -76,11 +76,12 @@ const run = async () => {
     //Payment related apis
     app.post("/create-checkout-session", async (req, res) => {
       const paymentInfo = req.body;
+      const amount = parseInt(paymentInfo.cost) * 100;
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {
             price_data: {
-              unit_amount: 1500,
+              unit_amount: amount,
               currency: "USD",
               product_data: {
                 name: paymentInfo.percelName,
@@ -92,7 +93,12 @@ const run = async () => {
         mode: "payment",
         customer_email: paymentInfo.senderEmail,
         success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+        cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancel`,
+        metadata: {
+          percelId: paymentInfo.percelId,
+        },
       });
+      res.send({ url: session.url });
     });
 
     await client.db("admin").command({ ping: 1 });
