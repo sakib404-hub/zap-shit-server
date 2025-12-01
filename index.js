@@ -129,6 +129,11 @@ const run = async () => {
       res.send({ url: session.url });
     });
 
+    app.patch("/payment-success", (req, res) => {
+      const sessionId = req.query.session_id;
+      console.log(sessionId);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log("MongoDB is Connected Successfully!");
   } catch (error) {
