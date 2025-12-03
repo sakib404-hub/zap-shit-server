@@ -6,6 +6,12 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(`${process.env.STRIPE_SECRET}`);
 const port = process.env.PORT || 5015;
 
+const generateTrackingId = () => {
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  return `ZAP-${date}-${random}`;
+};
+
 // middleware
 app.use(express.json());
 app.use(cors());
@@ -26,6 +32,7 @@ const run = async () => {
     //here i will generate the apis
     const db = client.db("zap-shift-db");
     const percelsCollection = db.collection("percels");
+    const paymentCollection = db.collection("payments");
 
     //percel apis
     app.get("/percels", async (req, res) => {
@@ -121,6 +128,7 @@ const run = async () => {
         mode: "payment",
         metadata: {
           percelId: paymentInfo.percelId,
+          percelName: paymentInfo.percelName,
         },
         customer_email: paymentInfo.senderEmail,
         success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
@@ -138,13 +146,36 @@ const run = async () => {
         const query = {
           _id: new ObjectId(id),
         };
+        const trackingId = generateTrackingId();
         const update = {
           $set: {
             paymentStatus: "paid",
+            trackingId: trackingId,
           },
         };
         const result = await percelsCollection.updateOne(query, update);
-        res.send(result);
+
+        //getting a payment entries
+        const payment = {
+          transactionId: session.payment_intent,
+          amount: session.amount_total / 100,
+          name: session.metadata.percelName,
+          currency: session.currency,
+          customerEmail: session.customer_email,
+          parcelId: session.metadata.percelId,
+          paymentStatus: session.payment_status,
+          paidAt: new Date(),
+        };
+        if (session.payment_status === "paid") {
+          const resultPayment = await paymentCollection.insertOne(payment);
+          res.send({
+            success: true,
+            modifyPercel: result,
+            paymenInfo: resultPayment,
+            transactionId: session.payment_intent,
+            trackingId: trackingId,
+          });
+        }
       }
       res.send({ success: false });
     });
