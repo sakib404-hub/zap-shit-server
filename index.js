@@ -80,6 +80,21 @@ const run = async () => {
       res.send(result);
     });
 
+    app.patch("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateInfo = req.body;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const updatedDoc = {
+        $set: {
+          role: updateInfo.role,
+        },
+      };
+      const result = await usersCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
     //riders related apis
     app.post("/riders", async (req, res) => {
       const newRider = req.body;
