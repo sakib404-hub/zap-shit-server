@@ -137,10 +137,55 @@ const run = async () => {
       res.send({ url: session.url });
     });
 
+    app.post("payment-checkout-session", async (req, res) => {
+      const paymenInfo = req.body;
+      const amount = parseFloat(paymenInfo.cost) * 100;
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price_data: {
+              unit_amount: amount,
+              currency: "USD",
+              product_data: {
+                name: `Please Pay for ${paymenInfo.percelName}`,
+              },
+              quantity: 1,
+            },
+          },
+        ],
+        mode: "payment",
+        metadata: {
+          percelId: paymenInfo.percelId,
+          percelName: paymenInfo.percelName,
+        },
+        customerEmail: paymenInfo.senderEmail,
+        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+      });
+      res.send({ url: session.url });
+    });
+
     app.patch("/payment-success", async (req, res) => {
       const sessionId = req.query.session_id;
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       // console.log("session retrive, ", session);
+      const transactionId = session.payment_intent;
+      const query = { transactionId: transactionId };
+
+      const paymentExist = await paymentCollection.findOne(query);
+      if (paymentExist) {
+        const query = {
+          _id: new ObjectId(paymentExist.parcelId),
+        };
+        const parcel = await percelsCollection.findOne(query);
+        return res.send({
+          success: true,
+          message: "Payment Already Exist!",
+          transactionId: paymentExist.transactionId,
+          trackingId: parcel.trackingId,
+        });
+      }
+
       if (session.payment_status === "paid") {
         const id = session.metadata.percelId;
         const query = {
@@ -168,7 +213,7 @@ const run = async () => {
         };
         if (session.payment_status === "paid") {
           const resultPayment = await paymentCollection.insertOne(payment);
-          res.send({
+          return res.send({
             success: true,
             modifyPercel: result,
             paymenInfo: resultPayment,
