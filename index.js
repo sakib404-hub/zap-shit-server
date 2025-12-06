@@ -73,6 +73,13 @@ const run = async () => {
       res.send(result);
     });
 
+    app.get("/users", async (req, res) => {
+      const query = {};
+      const cursor = usersCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     //riders related apis
     app.post("/riders", async (req, res) => {
       const newRider = req.body;
@@ -84,14 +91,40 @@ const run = async () => {
     });
 
     app.get("/riders", async (req, res) => {
-      const query = {
-        status: "pending",
-      };
+      const query = {};
       if (req.query.status) {
         query.status = req.query.status;
       }
       const cursor = ridersCollection.find(query);
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.patch("/riders/:id", verifyFirebaseToken, async (req, res) => {
+      const id = req.params.id;
+      const status = req.body.status;
+      const updatedDoc = {
+        $set: {
+          status: status,
+        },
+      };
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await ridersCollection.updateOne(query, updatedDoc);
+      if (status === "approved") {
+        const email = req.body.email;
+        const userQuery = { email: email };
+        const updateUser = {
+          $set: {
+            role: "rider",
+          },
+        };
+        const userResult = await usersCollection.updateOne(
+          userQuery,
+          updateUser
+        );
+      }
       res.send(result);
     });
 
