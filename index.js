@@ -225,6 +225,17 @@ const run = async () => {
       res.send({ success: false });
     });
 
+    app.get("/payment", async (req, res) => {
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.customerEmail = email;
+      }
+      const cursor = paymentCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log("MongoDB is Connected Successfully!");
   } catch (error) {
