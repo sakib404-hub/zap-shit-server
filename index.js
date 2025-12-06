@@ -5,6 +5,12 @@ require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(`${process.env.STRIPE_SECRET}`);
 const port = process.env.PORT || 5015;
+// initializing firebase Admin
+const admin = require("firebase-admin");
+const serviceAccount = require("./admin_key.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 const generateTrackingId = () => {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -15,6 +21,15 @@ const generateTrackingId = () => {
 // middleware
 app.use(express.json());
 app.use(cors());
+
+const verifyFirebaseToken = (req, res, next) => {
+  console.log("header : ", req.headers.authorization);
+  const accessToken = req.headers.authorization;
+  if (!accessToken) {
+    return res.status(401).send({ message: "Unauthorized Access!" });
+  }
+  next();
+};
 
 // mongoDB Connection
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@crud-operation.iftbw43.mongodb.net/?appName=CRUD-operation`;
@@ -225,9 +240,10 @@ const run = async () => {
       res.send({ success: false });
     });
 
-    app.get("/payment", async (req, res) => {
+    app.get("/payments", verifyFirebaseToken, async (req, res) => {
       const email = req.query.email;
       const query = {};
+      // console.log("headers : ", req.headers);
       if (email) {
         query.customerEmail = email;
       }
