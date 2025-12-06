@@ -54,8 +54,18 @@ const run = async () => {
     await client.connect();
     //here i will generate the apis
     const db = client.db("zap-shift-db");
+    const usersCollection = db.collection("users");
     const percelsCollection = db.collection("percels");
     const paymentCollection = db.collection("payments");
+
+    // user related apis
+    app.post("/users", async (req, res) => {
+      const newUser = req.body;
+      newUser.role = "user";
+      newUser.createdAt = new Date();
+      const result = await usersCollection.insertOne(newUser);
+      res.send(result);
+    });
 
     //percel apis
     app.get("/percels", async (req, res) => {
