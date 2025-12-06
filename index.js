@@ -83,6 +83,18 @@ const run = async () => {
       res.send(result);
     });
 
+    app.get("/riders", async (req, res) => {
+      const query = {
+        status: "pending",
+      };
+      if (req.query.status) {
+        query.status = req.query.status;
+      }
+      const cursor = ridersCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     //percel apis
     app.get("/percels", async (req, res) => {
       // here i will do something
