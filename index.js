@@ -22,13 +22,21 @@ const generateTrackingId = () => {
 app.use(express.json());
 app.use(cors());
 
-const verifyFirebaseToken = (req, res, next) => {
-  console.log("header : ", req.headers.authorization);
+const verifyFirebaseToken = async (req, res, next) => {
+  // console.log("header : ", req.headers.authorization);
   const accessToken = req.headers.authorization;
   if (!accessToken) {
     return res.status(401).send({ message: "Unauthorized Access!" });
   }
-  next();
+  try {
+    const tokenId = accessToken.split(" ")[1];
+    const decoded = await admin.auth().verifyIdToken(tokenId);
+    // console.log("Decoed in the token : ", decoded);
+    req.tokenEmail = decoded.email;
+    next();
+  } catch (error) {
+    return res.status(401).send({ message: "UnAuthorized Access!" });
+  }
 };
 
 // mongoDB Connection
@@ -243,11 +251,18 @@ const run = async () => {
     app.get("/payments", verifyFirebaseToken, async (req, res) => {
       const email = req.query.email;
       const query = {};
+      const sortField = {
+        paidAt: -1,
+      };
       // console.log("headers : ", req.headers);
       if (email) {
         query.customerEmail = email;
+        // checking email adress
+        if (email !== req.tokenEmail) {
+          return res.status(403).send({ messgae: "Forbidden Access!" });
+        }
       }
-      const cursor = paymentCollection.find(query);
+      const cursor = paymentCollection.find(query).sort(sortField);
       const result = await cursor.toArray();
       res.send(result);
     });
