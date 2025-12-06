@@ -57,13 +57,29 @@ const run = async () => {
     const usersCollection = db.collection("users");
     const percelsCollection = db.collection("percels");
     const paymentCollection = db.collection("payments");
+    const ridersCollection = db.collection("riders");
 
     // user related apis
     app.post("/users", async (req, res) => {
       const newUser = req.body;
       newUser.role = "user";
+      const email = newUser.email;
+      const userExits = await usersCollection.findOne({ email });
+      if (userExits) {
+        return res.send({ message: "User Exist!" });
+      }
       newUser.createdAt = new Date();
       const result = await usersCollection.insertOne(newUser);
+      res.send(result);
+    });
+
+    //riders related apis
+    app.post("/riders", async (req, res) => {
+      const newRider = req.body;
+      newRider.status = "pending";
+      newRider.createdAt = new Date();
+
+      const result = await ridersCollection.insertOne(newRider);
       res.send(result);
     });
 
