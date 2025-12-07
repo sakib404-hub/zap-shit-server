@@ -199,6 +199,20 @@ const run = async () => {
     );
 
     //percel apis
+    app.get("/percels/riders", async (req, res) => {
+      const { email, deliveryStatus } = req.query;
+      const query = {};
+      if (email) {
+        query.riderEmail = email;
+      }
+      if (deliveryStatus) {
+        query.deliveryStatus = deliveryStatus;
+      }
+      const cursor = percelsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.get("/percels", async (req, res) => {
       // here i will do something
       const query = {};
