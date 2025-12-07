@@ -213,6 +213,21 @@ const run = async () => {
       res.send(result);
     });
 
+    app.patch("/percels/:id/status", async (req, res) => {
+      const id = req.params.id;
+      const { deliveryStatus } = req.body;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const updatedDoc = {
+        $set: {
+          deliveryStatus: deliveryStatus,
+        },
+      };
+      const result = await percelsCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
     app.get("/percels", async (req, res) => {
       // here i will do something
       const query = {};
