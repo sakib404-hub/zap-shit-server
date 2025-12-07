@@ -206,6 +206,37 @@ const run = async () => {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    app.patch("/percel/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const { riderId, riderName, riderEmail } = req.body;
+      const updatedDoc = {
+        $set: {
+          deliveryStatus: "driver-assigned",
+          riderId: riderId,
+          riderEmail: riderEmail,
+          riderName: riderName,
+        },
+      };
+      const result = await percelsCollection.updateOne(query, updatedDoc);
+      //updating rider information
+      const riderQuery = {
+        _id: new ObjectId(riderId),
+      };
+      const riderUpdatedDoc = {
+        $set: {
+          workStatus: "in delivery",
+        },
+      };
+      const riderResult = await ridersCollection.updateOne(
+        riderQuery,
+        riderUpdatedDoc
+      );
+      res.send(riderResult);
+    });
     //getting mypercels only
     app.get("/myPercels", async (req, res) => {
       const query = {};
