@@ -147,9 +147,16 @@ const run = async () => {
     });
 
     app.get("/riders", async (req, res) => {
+      const { status, district, workStatus } = req.query;
       const query = {};
-      if (req.query.status) {
+      if (status) {
         query.status = req.query.status;
+      }
+      // if (district) {
+      //   query.ridersDistrict = district;
+      // }
+      if (workStatus) {
+        query.workStatus = workStatus;
       }
       const cursor = ridersCollection.find(query);
       const result = await cursor.toArray();
@@ -166,6 +173,7 @@ const run = async () => {
         const updatedDoc = {
           $set: {
             status: status,
+            workStatus: "available",
           },
         };
         const query = {
@@ -178,6 +186,7 @@ const run = async () => {
           const updateUser = {
             $set: {
               role: "rider",
+              workStatus: "available",
             },
           };
           const userResult = await usersCollection.updateOne(
@@ -201,9 +210,12 @@ const run = async () => {
     app.get("/myPercels", async (req, res) => {
       const query = {};
       //   const email = req.query.email;
-      const { email } = req.query;
+      const { email, deliveryStatus } = req.query;
       if (email) {
         query.senderEmail = email;
+      }
+      if (deliveryStatus) {
+        query.deliveryStatus = deliveryStatus;
       }
       const cursor = percelsCollection.find(query);
       const result = await cursor.toArray();
@@ -351,6 +363,7 @@ const run = async () => {
           $set: {
             paymentStatus: "paid",
             trackingId: trackingId,
+            deliveryStatus: "pending-pickup",
           },
         };
         const result = await percelsCollection.updateOne(query, update);
