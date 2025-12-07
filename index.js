@@ -88,7 +88,20 @@ const run = async () => {
     });
 
     app.get("/users", async (req, res) => {
+      const searchText = req.query.searchText;
       const query = {};
+      // if (searchText) {
+      //   query.displayName = {
+      //     $regex: searchText,
+      //     $options: "i",
+      //   };
+      // }
+      if (searchText) {
+        query.$or = [
+          { diplayName: { $regex: searchText, $options: "i" } },
+          { email: { $regex: searchText, $options: "i" } },
+        ];
+      }
       const cursor = usersCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -143,33 +156,38 @@ const run = async () => {
       res.send(result);
     });
 
-    app.patch("/riders/:id", async (req, res) => {
-      const id = req.params.id;
-      const status = req.body.status;
-      const updatedDoc = {
-        $set: {
-          status: status,
-        },
-      };
-      const query = {
-        _id: new ObjectId(id),
-      };
-      const result = await ridersCollection.updateOne(query, updatedDoc);
-      if (status === "approved") {
-        const email = req.body.email;
-        const userQuery = { email: email };
-        const updateUser = {
+    app.patch(
+      "/riders/:id",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const status = req.body.status;
+        const updatedDoc = {
           $set: {
-            role: "rider",
+            status: status,
           },
         };
-        const userResult = await usersCollection.updateOne(
-          userQuery,
-          updateUser
-        );
+        const query = {
+          _id: new ObjectId(id),
+        };
+        const result = await ridersCollection.updateOne(query, updatedDoc);
+        if (status === "approved") {
+          const email = req.body.email;
+          const userQuery = { email: email };
+          const updateUser = {
+            $set: {
+              role: "rider",
+            },
+          };
+          const userResult = await usersCollection.updateOne(
+            userQuery,
+            updateUser
+          );
+        }
+        res.send(result);
       }
-      res.send(result);
-    });
+    );
 
     //percel apis
     app.get("/percels", async (req, res) => {
