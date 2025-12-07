@@ -59,6 +59,20 @@ const run = async () => {
     const paymentCollection = db.collection("payments");
     const ridersCollection = db.collection("riders");
 
+    // middleWare with the database Access
+    //verifyAdmin before allowing the admin activity
+    //must be used after verifying the firebaseToken
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.tokenEmail;
+      const query = {
+        email: email,
+      };
+      const user = await usersCollection.findOne(query);
+      if (!user || user.role !== "admin") {
+        return res.status(403).send({ message: "Forbidden Accesss!" });
+      }
+      next();
+    };
     // user related apis
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -89,20 +103,25 @@ const run = async () => {
       res.send({ role: user?.role || "user" });
     });
 
-    app.patch("/users/:id", async (req, res) => {
-      const id = req.params.id;
-      const updateInfo = req.body;
-      const query = {
-        _id: new ObjectId(id),
-      };
-      const updatedDoc = {
-        $set: {
-          role: updateInfo.role,
-        },
-      };
-      const result = await usersCollection.updateOne(query, updatedDoc);
-      res.send(result);
-    });
+    app.patch(
+      "/users/:id",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const updateInfo = req.body;
+        const query = {
+          _id: new ObjectId(id),
+        };
+        const updatedDoc = {
+          $set: {
+            role: updateInfo.role,
+          },
+        };
+        const result = await usersCollection.updateOne(query, updatedDoc);
+        res.send(result);
+      }
+    );
 
     //riders related apis
     app.post("/riders", async (req, res) => {
@@ -124,7 +143,7 @@ const run = async () => {
       res.send(result);
     });
 
-    app.patch("/riders/:id", verifyFirebaseToken, async (req, res) => {
+    app.patch("/riders/:id", async (req, res) => {
       const id = req.params.id;
       const status = req.body.status;
       const updatedDoc = {
